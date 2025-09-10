@@ -16,4 +16,5 @@ commonLabels:
 
 images:
   - name: ${{ values.name }}
+    newName: ECR_REGISTRY_PLACEHOLDER/${{ values.name }}
     newTag: latest
