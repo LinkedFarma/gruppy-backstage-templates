@@ -4,7 +4,8 @@ ${{ values.description }}
 
 ## Descrição
 
-Este é um microsserviço criado usando o template do Backstage da Gruppy.
+Este é um microsserviço criado usando o template do Backstage da Gruppy. 
+O projeto está configurado para deploy automático usando os workflows reutilizáveis da organização.
 
 ## Tecnologias
 
@@ -13,6 +14,9 @@ Este é um microsserviço criado usando o template do Backstage da Gruppy.
 - Docker
 - ESLint
 - Prettier
+- GitHub Actions (workflow reutilizável)
+- AWS ECR
+- ArgoCD
 
 ## Como executar
 
@@ -34,6 +38,40 @@ docker build -t ${{ values.name }} .
 docker run -p 3000:3000 ${{ values.name }}
 ```
 
+## CI/CD e Deploy
+
+Este projeto usa o workflow reutilizável da LinkedFarma para CI/CD e deploy automático:
+
+- **Build e Deploy**: Automático via GitHub Actions
+- **Container Registry**: AWS ECR
+- **Orquestração**: ArgoCD
+- **Ambientes**: development, staging, master
+
+### Variáveis Necessárias
+
+Configure as seguintes variáveis no repositório:
+
+**Repository Variables** (obrigatórias):
+- `APP_NAME`: Nome da aplicação (ex: {{ values.name }})
+- `ECR_REGISTRY`: Registry do ECR da AWS
+- `ECR_REPOSITORY`: Nome do repositório no ECR
+
+**Repository Variables** (opcionais):
+- `PREFIX_DOMAIN`: Prefixo do domínio para acesso externo (será completado com .gruppy.com.br)
+- `CONTAINER_PORT`: Porta do container (padrão: 3000)
+- `SERVICE_PORT`: Porta do service (padrão: 80)
+- `ADDITIONAL_CONTAINERS`: Containers adicionais (formato JSON)
+
+### Deploy Manual
+
+Para fazer deploy manual de um ambiente específico:
+
+```bash
+# Via GitHub Actions (workflow_dispatch)
+# Acesse Actions > Deploy Application > Run workflow
+# Selecione o ambiente: dev, qas, ou prd
+```
+
 ## Estrutura do Projeto
 
 ```
@@ -43,8 +81,14 @@ docker run -p 3000:3000 ${{ values.name }}
 ├── Dockerfile
 ├── catalog-info.yaml
 ├── .eslintrc.js
-├── .prettierrc
-└── .gitignore
+├── .eslintignore
+├── .env.example
+├── .gitignore
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml (usa workflow reutilizável)
+└── __tests__/
+    └── basic.test.js
 ```
 
 ## Endpoints
