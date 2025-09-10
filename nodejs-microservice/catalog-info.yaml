@@ -1,0 +1,58 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  description: ${{ values.description }}
+  tags:
+    - nodejs
+    - express
+    - microservice
+    - gruppy
+    - backstage
+  annotations:
+    github.com/project-slug: ${{ values.destination.owner }}/${{ values.destination.repo }}
+    argocd/app-name: ${{ values.name }}
+    backstage.io/kubernetes-label-selector: 'app=${{ values.name }}'
+spec:
+  type: service
+  lifecycle: experimental
+  owner: gruppy-platform-team
+  system: gruppy-microservices
+  providesApis:
+    - ${{ values.name }}-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: ${{ values.name }}-api
+  description: API for ${{ values.name }}
+spec:
+  type: openapi
+  lifecycle: experimental
+  owner: gruppy-platform-team
+  system: gruppy-microservices
+  definition: |
+    openapi: 3.0.0
+    info:
+      title: ${{ values.name }} API
+      description: ${{ values.description }}
+      version: 1.0.0
+    paths:
+      /:
+        get:
+          summary: Root endpoint
+          responses:
+            '200':
+              description: Service information
+      /health:
+        get:
+          summary: Health check
+          responses:
+            '200':
+              description: Service is healthy
+      /api/info:
+        get:
+          summary: Service information
+          responses:
+            '200':
+              description: Detailed service information
