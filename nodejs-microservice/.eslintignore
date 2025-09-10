@@ -1,0 +1,12 @@
+node_modules/
+coverage/
+dist/
+build/
+*.min.js
+.github/
+k8s/
+Dockerfile
+*.md
+*.json
+*.yaml
+*.yml

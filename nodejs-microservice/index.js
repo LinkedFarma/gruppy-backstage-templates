@@ -13,7 +13,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Middleware de logging
-app.use((req, res, next) => {
+app.use((req, _res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
@@ -22,7 +22,7 @@ app.use((req, res, next) => {
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
-    service: '${{ values.name }}',
+    service: '{{ values.name }}',
     description: '${{ values.description }}',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
@@ -34,7 +34,7 @@ app.get('/health', (req, res) => {
 app.get('/ready', (req, res) => {
   res.status(200).json({
     status: 'READY',
-    service: '${{ values.name }}',
+    service: '{{ values.name }}',
     timestamp: new Date().toISOString()
   });
 });
@@ -42,7 +42,7 @@ app.get('/ready', (req, res) => {
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Welcome to ${{ values.name }}',
+    message: 'Welcome to {{ values.name }}',
     description: '${{ values.description }}',
     version: '1.0.0',
     endpoints: {
@@ -56,7 +56,7 @@ app.get('/', (req, res) => {
 // API routes
 app.get('/api/info', (req, res) => {
   res.json({
-    name: '${{ values.name }}',
+    name: '{{ values.name }}',
     description: '${{ values.description }}',
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development',
@@ -65,7 +65,7 @@ app.get('/api/info', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error(err.stack);
   res.status(500).json({
     error: 'Internal Server Error',
@@ -93,7 +93,7 @@ process.on('SIGINT', () => {
 });
 
 app.listen(port, () => {
-  console.log(`🚀 ${{ values.name }} running on port ${port}`);
+  console.log(`🚀 {{ values.name }} running on port ${port}`);
   console.log(`📖 Health check: http://localhost:${port}/health`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
