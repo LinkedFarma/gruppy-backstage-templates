@@ -1,15 +1,23 @@
 name: Setup CI/CD Automatically
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'package.json'
   workflow_dispatch:
+    inputs:
+      setup_required:
+        description: 'Run setup (first time only)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 jobs:
   setup:
     runs-on: ubuntu-latest
-    if: github.run_number == 1
+    if: github.event.inputs.setup_required == 'true'
+    permissions:
+      contents: read
+      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,7 +27,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Extract service name from package.json
         id: extract-name
@@ -45,3 +53,12 @@ jobs:
           echo "- ECR Repository: ${{ steps.extract-name.outputs.service_name }}"
           echo "- GitHub Variables: Configured"
           echo "- Ready for automatic deployments"
+
+  info:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.setup_required != 'true'
+    steps:
+      - name: Setup Info
+        run: |
+          echo "ℹ️  Setup already completed"
+          echo "CI/CD is ready for deployments"
