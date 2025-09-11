@@ -10,7 +10,7 @@ metadata:
     - gruppy
     - backstage
   annotations:
-    github.com/project-slug: ${{ values.destination.owner }}/${{ values.destination.repo }}
+    github.com/project-slug: LinkedFarma/${{ values.name }}
     argocd/app-name: ${{ values.name }}
     backstage.io/kubernetes-label-selector: 'app=${{ values.name }}'
 spec:
