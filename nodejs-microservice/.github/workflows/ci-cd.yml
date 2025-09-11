@@ -2,19 +2,7 @@ name: Deploy Application
 
 on:
   push:
-              echo "needs_setup=false" >> $GITHUB_OUTPUT
-            echo "✅ Setup complete: ECR repository exists in AWS"
-            
-            # Verificar se variáveis necessárias estão definidas
-            if [ -z "${{ vars.APP_NAME }}" ]; then
-              echo "🔧 Setting APP_NAME variable..."
-              gh variable set APP_NAME --body "${{ vars.ECR_REPOSITORY }}"
-            fi
-            
-            if [ -z "${{ vars.ECR_REGISTRY }}" ]; then
-              echo "🔧 Setting ECR_REGISTRY variable..."
-              gh variable set ECR_REGISTRY --body "124213954422.dkr.ecr.us-east-1.amazonaws.com"
-            fibranches:
+    branches:
       - main
       - development
       
@@ -57,6 +45,17 @@ jobs:
             if aws ecr describe-repositories --repository-names "${{ vars.ECR_REPOSITORY }}" --region us-east-1 >/dev/null 2>&1; then
               echo "needs_setup=false" >> $GITHUB_OUTPUT
               echo "✅ Setup complete: ECR repository exists in AWS"
+              
+              # Verificar se variáveis necessárias estão definidas
+              if [ -z "${{ vars.APP_NAME }}" ]; then
+                echo "🔧 Setting APP_NAME variable..."
+                gh variable set APP_NAME --body "${{ vars.ECR_REPOSITORY }}"
+              fi
+              
+              if [ -z "${{ vars.ECR_REGISTRY }}" ]; then
+                echo "🔧 Setting ECR_REGISTRY variable..."
+                gh variable set ECR_REGISTRY --body "124213954422.dkr.ecr.us-east-1.amazonaws.com"
+              fi
             else
               echo "needs_setup=true" >> $GITHUB_OUTPUT
               echo "❌ Setup needed: ECR repository '${{ vars.ECR_REPOSITORY }}' does not exist in AWS"
@@ -80,10 +79,8 @@ jobs:
       - name: Create ArgoCD Application
         env:
           ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER || 'argocd.gruppy.com.br' }}
-          ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
           ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME || 'admin' }}
           ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APP_NAME: ${{ vars.APP_NAME }}
           ENVIRONMENT: dev
         run: |
@@ -93,30 +90,9 @@ jobs:
           curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
           sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
           
-          # Login to ArgoCD using token or username/password
-          if [ -n "$ARGOCD_TOKEN" ]; then
-            echo "🔐 Authenticating with ArgoCD using token..."
-            argocd login $ARGOCD_SERVER --auth-token $ARGOCD_TOKEN --insecure --grpc-web
-          elif [ -n "$ARGOCD_PASSWORD" ]; then
-            echo "🔐 Authenticating with ArgoCD using username/password..."
-            argocd login $ARGOCD_SERVER --username $ARGOCD_USERNAME --password $ARGOCD_PASSWORD --insecure --grpc-web
-          else
-            echo "❌ No ArgoCD authentication method provided"
-            echo "Please set either ARGOCD_TOKEN or ARGOCD_PASSWORD secret"
-            exit 1
-          fi
-          
-          # Configure repository in ArgoCD if not already configured
-          echo "🔧 Configuring repository access in ArgoCD..."
-          if ! argocd repo get https://github.com/LinkedFarma/infra --grpc-web >/dev/null 2>&1; then
-            echo "📂 Adding repository to ArgoCD..."
-            argocd repo add https://github.com/LinkedFarma/infra \
-              --username LinkedFarma \
-              --password $GITHUB_TOKEN \
-              --grpc-web
-          else
-            echo "✅ Repository already configured in ArgoCD"
-          fi
+          # Login to ArgoCD
+          echo "🔐 Authenticating with ArgoCD using username/password..."
+          argocd login $ARGOCD_SERVER --username $ARGOCD_USERNAME --password $ARGOCD_PASSWORD --insecure --grpc-web
           
           # Check if application already exists
           if argocd app get $APP_NAME-$ENVIRONMENT --grpc-web >/dev/null 2>&1; then
