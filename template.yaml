@@ -42,20 +42,12 @@ spec:
             - 'External (acessível via web)'
             - 'Internal (apenas dentro do cluster)'
           default: external
-          
-    - title: External Service Configuration
-      required:
-        - prefixDomain
-      dependencies:
-        serviceType:
-          - external
-      properties:
         prefixDomain:
-          title: Prefix Domain
+          title: Prefix Domain (apenas para external)
           type: string
           description: Prefixo do domínio para serviços externos (ex. api, admin, app)
           pattern: '^[a-z0-9-]+$'
-          ui:help: 'Será usado como: prefixo.gruppy.com.br'
+          ui:help: 'Será usado como: prefixo.gruppy.com.br - deixe vazio para serviços internos'
         
     - title: Repository Configuration
       required:
