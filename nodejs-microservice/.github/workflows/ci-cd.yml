@@ -73,6 +73,8 @@ jobs:
 
   deploy:
     needs: [setup-check, setup]
-    if: always() && (needs.setup-check.outputs.needs_setup == 'false' || needs.setup.result == 'success')
+    if: always() && !cancelled() && !failure()
     uses: LinkedFarma/workflows/.github/workflows/argo-cd.yml@master
+    with:
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
     secrets: inherit
