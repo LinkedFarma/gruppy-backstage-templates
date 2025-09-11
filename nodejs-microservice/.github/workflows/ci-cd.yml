@@ -2,7 +2,19 @@ name: Deploy Application
 
 on:
   push:
-    branches:
+              echo "needs_setup=false" >> $GITHUB_OUTPUT
+            echo "✅ Setup complete: ECR repository exists in AWS"
+            
+            # Verificar se variáveis necessárias estão definidas
+            if [ -z "${{ vars.APP_NAME }}" ]; then
+              echo "🔧 Setting APP_NAME variable..."
+              gh variable set APP_NAME --body "${{ vars.ECR_REPOSITORY }}"
+            fi
+            
+            if [ -z "${{ vars.ECR_REGISTRY }}" ]; then
+              echo "🔧 Setting ECR_REGISTRY variable..."
+              gh variable set ECR_REGISTRY --body "124213954422.dkr.ecr.us-east-1.amazonaws.com"
+            fibranches:
       - main
       - development
       
@@ -16,6 +28,9 @@ permissions:
 jobs:
   setup-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
     outputs:
       needs_setup: ${{ steps.check.outputs.needs_setup }}
     steps:
@@ -28,6 +43,8 @@ jobs:
 
       - name: Check if setup is needed
         id: check
+        env:
+          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
         run: |
           if [ -z "${{ vars.ECR_REPOSITORY }}" ]; then
             echo "needs_setup=true" >> $GITHUB_OUTPUT
