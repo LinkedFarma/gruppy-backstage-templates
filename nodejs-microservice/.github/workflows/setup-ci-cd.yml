@@ -41,7 +41,7 @@ jobs:
 
       - name: Set GitHub Variables
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
         run: |
           gh variable set ECR_REPOSITORY --body "${{ steps.extract-name.outputs.service_name }}"
 
