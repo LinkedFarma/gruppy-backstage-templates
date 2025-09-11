@@ -26,8 +26,22 @@ jobs:
             echo "needs_setup=true" >> $GITHUB_OUTPUT
             echo "🔧 Setup needed: ECR_REPOSITORY variable not found"
           else
-            echo "needs_setup=false" >> $GITHUB_OUTPUT
-            echo "✅ Setup complete: ECR_REPOSITORY = ${{ vars.ECR_REPOSITORY }}"
+            echo "🔍 ECR_REPOSITORY variable exists: ${{ vars.ECR_REPOSITORY }}"
+            echo "🔍 Checking if ECR repository exists in AWS..."
+            
+            # Configure AWS (needed for ECR check)
+            export AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"
+            export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+            export AWS_DEFAULT_REGION="${{ vars.AWS_REGION }}"
+            
+            # Check if ECR repository actually exists
+            if aws ecr describe-repositories --repository-names "${{ vars.ECR_REPOSITORY }}" --region us-east-1 >/dev/null 2>&1; then
+              echo "needs_setup=false" >> $GITHUB_OUTPUT
+              echo "✅ Setup complete: ECR repository exists in AWS"
+            else
+              echo "needs_setup=true" >> $GITHUB_OUTPUT
+              echo "🔧 Setup needed: ECR repository does not exist in AWS"
+            fi
           fi
 
   setup:
