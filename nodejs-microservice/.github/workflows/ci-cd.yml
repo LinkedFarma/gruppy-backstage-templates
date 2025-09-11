@@ -83,6 +83,7 @@ jobs:
           ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
           ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME || 'admin' }}
           ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APP_NAME: ${{ vars.APP_NAME }}
           ENVIRONMENT: dev
         run: |
@@ -103,6 +104,18 @@ jobs:
             echo "❌ No ArgoCD authentication method provided"
             echo "Please set either ARGOCD_TOKEN or ARGOCD_PASSWORD secret"
             exit 1
+          fi
+          
+          # Configure repository in ArgoCD if not already configured
+          echo "🔧 Configuring repository access in ArgoCD..."
+          if ! argocd repo get https://github.com/LinkedFarma/infra --grpc-web >/dev/null 2>&1; then
+            echo "📂 Adding repository to ArgoCD..."
+            argocd repo add https://github.com/LinkedFarma/infra \
+              --username LinkedFarma \
+              --password $GITHUB_TOKEN \
+              --grpc-web
+          else
+            echo "✅ Repository already configured in ArgoCD"
           fi
           
           # Check if application already exists
