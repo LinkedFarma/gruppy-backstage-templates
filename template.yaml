@@ -27,6 +27,35 @@ spec:
           title: Description
           type: string
           description: Breve descrição do que o serviço faz
+    - title: Service Configuration
+      required:
+        - serviceType
+      properties:
+        serviceType:
+          title: Service Type
+          type: string
+          description: Tipo de exposição do serviço
+          enum:
+            - external
+            - internal
+          enumNames:
+            - 'External (acessível via web)'
+            - 'Internal (apenas dentro do cluster)'
+          default: external
+          
+    - title: External Service Configuration
+      required:
+        - prefixDomain
+      dependencies:
+        serviceType:
+          - external
+      properties:
+        prefixDomain:
+          title: Prefix Domain
+          type: string
+          description: Prefixo do domínio para serviços externos (ex. api, admin, app)
+          pattern: '^[a-z0-9-]+$'
+          ui:help: 'Será usado como: prefixo.gruppy.com.br'
         
     - title: Repository Configuration
       required:
@@ -49,6 +78,8 @@ spec:
         values:
           name: ${{ parameters.name }}
           description: ${{ parameters.description }}
+          serviceType: ${{ parameters.serviceType }}
+          prefixDomain: ${{ parameters.prefixDomain | default('') }}
           
     - id: publish
       name: Publish to GitHub

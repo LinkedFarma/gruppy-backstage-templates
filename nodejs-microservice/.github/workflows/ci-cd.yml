@@ -80,6 +80,16 @@ jobs:
             echo "✅ Created ARGOCD_SERVER variable"
           fi
           
+          # Set Prefix-domain only if service is external and prefix is provided
+          if [ "${{ values.serviceType }}" = "external" ] && [ -n "${{ values.prefixDomain }}" ]; then
+            if ! gh variable list | grep -q "PREFIX_DOMAIN"; then
+              gh variable set PREFIX_DOMAIN --body "${{ values.prefixDomain }}"
+              echo "✅ Created PREFIX_DOMAIN variable (external service)"
+            fi
+          else
+            echo "✅ Skipping PREFIX_DOMAIN - internal service or no prefix provided"
+          fi
+          
           if ! gh secret list | grep -q "ARGOCD_USERNAME"; then
             gh secret set ARGOCD_USERNAME --body "admin"
             echo "✅ Created ARGOCD_USERNAME secret"
@@ -108,49 +118,6 @@ jobs:
     needs: [deploy]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        
-      - name: Copy Missing Files from Template to Infra
-        env:
-          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
-          APP_NAME: ${{ vars.APP_NAME || github.event.repository.name }}
-          ENVIRONMENT: dev
-        run: |
-          echo "🔄 Copying missing template files to infra repository..."
-          
-          # Clone infra repository
-          git clone git@github.com:LinkedFarma/infra.git
-          cd infra
-          
-          # Create target directory if it doesn't exist
-          mkdir -p kubernetes/$APP_NAME/$ENVIRONMENT
-          
-          # Copy ingress.yaml if it exists in template but missing in infra
-          if [ -f "../k8s/ingress.yaml" ] && [ ! -f "kubernetes/$APP_NAME/$ENVIRONMENT/ingress.yaml" ]; then
-            echo "📋 Copying ingress.yaml from template..."
-            cp ../k8s/ingress.yaml kubernetes/$APP_NAME/$ENVIRONMENT/ingress.yaml
-          fi
-          
-          # Copy kustomization.yaml if it exists in template but missing in infra  
-          if [ -f "../k8s/kustomization.yaml" ] && [ ! -f "kubernetes/$APP_NAME/$ENVIRONMENT/kustomization.yaml" ]; then
-            echo "📋 Copying kustomization.yaml from template..."
-            cp ../k8s/kustomization.yaml kubernetes/$APP_NAME/$ENVIRONMENT/kustomization.yaml
-          fi
-          
-          # Check if there are changes to commit
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add -A
-          
-          if ! git diff --cached --exit-code > /dev/null; then
-            git commit -m "Copy missing template files for $APP_NAME-$ENVIRONMENT"
-            git push
-            echo "✅ Missing template files copied successfully!"
-          else
-            echo "✅ All template files already present"
-          fi
-          
       - name: Create ArgoCD Application
         env:
           ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER || 'argocd.gruppy.com.br' }}
