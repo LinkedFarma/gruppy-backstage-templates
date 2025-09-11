@@ -81,6 +81,8 @@ jobs:
         env:
           ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER || 'argocd.gruppy.com.br' }}
           ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
+          ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME || 'admin' }}
+          ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
           APP_NAME: ${{ vars.APP_NAME }}
           ENVIRONMENT: dev
         run: |
@@ -90,13 +92,23 @@ jobs:
           curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
           sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
           
-          # Login to ArgoCD
-          argocd login $ARGOCD_SERVER --username admin --password $ARGOCD_TOKEN --insecure
+          # Login to ArgoCD using token or username/password
+          if [ -n "$ARGOCD_TOKEN" ]; then
+            echo "🔐 Authenticating with ArgoCD using token..."
+            argocd login $ARGOCD_SERVER --auth-token $ARGOCD_TOKEN --insecure --grpc-web
+          elif [ -n "$ARGOCD_PASSWORD" ]; then
+            echo "🔐 Authenticating with ArgoCD using username/password..."
+            argocd login $ARGOCD_SERVER --username $ARGOCD_USERNAME --password $ARGOCD_PASSWORD --insecure --grpc-web
+          else
+            echo "❌ No ArgoCD authentication method provided"
+            echo "Please set either ARGOCD_TOKEN or ARGOCD_PASSWORD secret"
+            exit 1
+          fi
           
           # Check if application already exists
-          if argocd app get $APP_NAME-$ENVIRONMENT >/dev/null 2>&1; then
+          if argocd app get $APP_NAME-$ENVIRONMENT --grpc-web >/dev/null 2>&1; then
             echo "✅ Application $APP_NAME-$ENVIRONMENT already exists, syncing..."
-            argocd app sync $APP_NAME-$ENVIRONMENT
+            argocd app sync $APP_NAME-$ENVIRONMENT --grpc-web
           else
             echo "🆕 Creating new ArgoCD application: $APP_NAME-$ENVIRONMENT"
             argocd app create $APP_NAME-$ENVIRONMENT \
@@ -106,10 +118,11 @@ jobs:
               --dest-namespace $APP_NAME-$ENVIRONMENT \
               --sync-policy automated \
               --auto-prune \
-              --self-heal
+              --self-heal \
+              --grpc-web
             
             echo "🔄 Syncing application..."
-            argocd app sync $APP_NAME-$ENVIRONMENT
+            argocd app sync $APP_NAME-$ENVIRONMENT --grpc-web
           fi
           
           echo "✅ ArgoCD application $APP_NAME-$ENVIRONMENT is ready!"
