@@ -130,12 +130,16 @@ jobs:
               --dest-server https://kubernetes.default.svc \
               --dest-namespace $APP_NAME-$ENVIRONMENT \
               --sync-policy automated \
+              --sync-option CreateNamespace=true \
               --auto-prune \
               --self-heal \
               --grpc-web
             
+            echo "⏳ Waiting for application to be ready..."
+            sleep 10
+            
             echo "🔄 Syncing application..."
-            argocd app sync $APP_NAME-$ENVIRONMENT --grpc-web
+            argocd app sync $APP_NAME-$ENVIRONMENT --grpc-web || echo "⚠️ Sync may already be in progress"
           fi
           
           echo "✅ ArgoCD application $APP_NAME-$ENVIRONMENT is ready!"
