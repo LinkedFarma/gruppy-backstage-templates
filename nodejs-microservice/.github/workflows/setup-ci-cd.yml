@@ -43,8 +43,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh variable set APP_NAME --body "${{ steps.extract-name.outputs.service_name }}"
-          gh variable set ECR_REGISTRY --body "124213954422.dkr.ecr.us-east-1.amazonaws.com"
           gh variable set ECR_REPOSITORY --body "${{ steps.extract-name.outputs.service_name }}"
 
       - name: Setup Complete
