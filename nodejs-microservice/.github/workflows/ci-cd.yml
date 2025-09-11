@@ -19,6 +19,10 @@ jobs:
     permissions:
       contents: read
       actions: write
+    outputs:
+      app_name: ${{ steps.setup_vars.outputs.app_name }}
+      ecr_repository: ${{ steps.setup_vars.outputs.ecr_repository }}
+      ecr_registry: ${{ steps.setup_vars.outputs.ecr_registry }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,6 +35,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Setup repository variables
+        id: setup_vars
         env:
           GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
         run: |
@@ -40,29 +45,59 @@ jobs:
           echo "Setting up variables for: $APP_NAME"
           echo "Repository: $REPO_NAME"
           
-          # Set all required variables (force overwrite)
-          echo "Setting ECR_REPOSITORY to: $APP_NAME"
-          gh variable set ECR_REPOSITORY --body "$APP_NAME"
+          # Check and set ECR_REPOSITORY if not exists
+          if ! gh variable list | grep -q "ECR_REPOSITORY"; then
+            echo "Creating ECR_REPOSITORY variable: $APP_NAME"
+            gh variable set ECR_REPOSITORY --body "$APP_NAME"
+          else
+            echo "ECR_REPOSITORY already exists"
+          fi
           
-          echo "Setting APP_NAME to: $APP_NAME"  
-          gh variable set APP_NAME --body "$APP_NAME"
+          # Check and set APP_NAME if not exists
+          if ! gh variable list | grep -q "APP_NAME"; then
+            echo "Creating APP_NAME variable: $APP_NAME"
+            gh variable set APP_NAME --body "$APP_NAME"
+          else
+            echo "APP_NAME already exists"
+          fi
           
-          echo "Setting ECR_REGISTRY to: 124213954422.dkr.ecr.us-east-1.amazonaws.com"
-          gh variable set ECR_REGISTRY --body "124213954422.dkr.ecr.us-east-1.amazonaws.com"
+          # Check and set ECR_REGISTRY if not exists
+          if ! gh variable list | grep -q "ECR_REGISTRY"; then
+            echo "Creating ECR_REGISTRY variable"
+            gh variable set ECR_REGISTRY --body "124213954422.dkr.ecr.us-east-1.amazonaws.com"
+          else
+            echo "ECR_REGISTRY already exists"
+          fi
           
-          echo "Setting ARGOCD_SERVER to: argocd.gruppy.com.br"
-          gh variable set ARGOCD_SERVER --body "argocd.gruppy.com.br"
+          # Check and set ARGOCD_SERVER if not exists
+          if ! gh variable list | grep -q "ARGOCD_SERVER"; then
+            echo "Creating ARGOCD_SERVER variable"
+            gh variable set ARGOCD_SERVER --body "argocd.gruppy.com.br"
+          else
+            echo "ARGOCD_SERVER already exists"
+          fi
           
-          # Set ArgoCD secrets (force overwrite)
-          echo "Setting ArgoCD credentials..."
-          gh secret set ARGOCD_USERNAME --body "admin"
-          gh secret set ARGOCD_PASSWORD --body "oRXz0NXyU1N5gCDd"
+          # Check and set ArgoCD secrets if not exist
+          if ! gh secret list | grep -q "ARGOCD_USERNAME"; then
+            echo "Creating ARGOCD_USERNAME secret"
+            gh secret set ARGOCD_USERNAME --body "admin"
+          else
+            echo "ARGOCD_USERNAME already exists"
+          fi
           
-          echo "✅ Variables setup complete!"
-          echo "✅ ECR_REPOSITORY: $APP_NAME"
-          echo "✅ APP_NAME: $APP_NAME"
-          echo "✅ ECR_REGISTRY: 124213954422.dkr.ecr.us-east-1.amazonaws.com"
-          echo "✅ ARGOCD_SERVER: argocd.gruppy.com.br"
+          if ! gh secret list | grep -q "ARGOCD_PASSWORD"; then
+            echo "Creating ARGOCD_PASSWORD secret"
+            gh secret set ARGOCD_PASSWORD --body "oRXz0NXyU1N5gCDd"
+          else
+            echo "ARGOCD_PASSWORD already exists"
+          fi
+          
+          # Output values for other jobs
+          echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
+          echo "ecr_repository=$APP_NAME" >> $GITHUB_OUTPUT  
+          echo "ecr_registry=124213954422.dkr.ecr.us-east-1.amazonaws.com" >> $GITHUB_OUTPUT
+          
+          echo "✅ Setup complete!"
           
           # Create ECR repository if it doesn't exist
           echo "Checking ECR repository..."
