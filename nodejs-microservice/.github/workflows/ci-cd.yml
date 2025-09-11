@@ -72,3 +72,44 @@ jobs:
     with:
       environment: dev
     secrets: inherit
+
+  create-argocd-app:
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create ArgoCD Application
+        env:
+          ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER || 'argocd.gruppy.com.br' }}
+          ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
+          APP_NAME: ${{ vars.APP_NAME }}
+          ENVIRONMENT: dev
+        run: |
+          echo "🚀 Creating ArgoCD application: $APP_NAME-$ENVIRONMENT"
+          
+          # Install ArgoCD CLI
+          curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+          
+          # Login to ArgoCD
+          argocd login $ARGOCD_SERVER --username admin --password $ARGOCD_TOKEN --insecure
+          
+          # Check if application already exists
+          if argocd app get $APP_NAME-$ENVIRONMENT >/dev/null 2>&1; then
+            echo "✅ Application $APP_NAME-$ENVIRONMENT already exists, syncing..."
+            argocd app sync $APP_NAME-$ENVIRONMENT
+          else
+            echo "🆕 Creating new ArgoCD application: $APP_NAME-$ENVIRONMENT"
+            argocd app create $APP_NAME-$ENVIRONMENT \
+              --repo https://github.com/LinkedFarma/infra \
+              --path kubernetes/$APP_NAME/$ENVIRONMENT \
+              --dest-server https://kubernetes.default.svc \
+              --dest-namespace $APP_NAME-$ENVIRONMENT \
+              --sync-policy automated \
+              --auto-prune \
+              --self-heal
+            
+            echo "🔄 Syncing application..."
+            argocd app sync $APP_NAME-$ENVIRONMENT
+          fi
+          
+          echo "✅ ArgoCD application $APP_NAME-$ENVIRONMENT is ready!"
