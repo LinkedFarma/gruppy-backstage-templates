@@ -1,0 +1,44 @@
+name: Setup Repository Variables
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: 'Project name'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  setup-variables:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup repository variables
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROJECT_NAME: ${{ inputs.project_name }}
+        run: |
+          echo "Setting up variables for project: $PROJECT_NAME"
+          
+          # Set repository variables
+          gh variable set ECR_REPOSITORY --body "$PROJECT_NAME" --repo ${{ github.repository }}
+          gh variable set APP_NAME --body "$PROJECT_NAME" --repo ${{ github.repository }}
+          gh variable set ECR_REGISTRY --body "124213954422.dkr.ecr.us-east-1.amazonaws.com" --repo ${{ github.repository }}
+          gh variable set ARGOCD_SERVER --body "argocd.gruppy.com.br" --repo ${{ github.repository }}
+          
+          # Set secrets (ArgoCD credentials)
+          gh secret set ARGOCD_USERNAME --body "admin" --repo ${{ github.repository }}
+          gh secret set ARGOCD_PASSWORD --body "oRXz0NXyU1N5gCDd" --repo ${{ github.repository }}
+          
+          echo "✅ All variables and secrets configured successfully!"
+          echo "ECR_REPOSITORY: $PROJECT_NAME"
+          echo "APP_NAME: $PROJECT_NAME"
+          echo "ECR_REGISTRY: 124213954422.dkr.ecr.us-east-1.amazonaws.com"
+          echo "ARGOCD_SERVER: argocd.gruppy.com.br"
+          echo "ARGOCD_USERNAME: admin"
+          echo "ARGOCD_PASSWORD: [CONFIGURED]"
+          
+          echo "🚀 Project is ready for CI/CD deployment!"

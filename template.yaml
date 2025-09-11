@@ -57,6 +57,16 @@ spec:
         repoUrl: ${{ parameters.repoUrl }}
         description: ${{ parameters.description }}
 
+    - id: setup-variables
+      name: Setup Repository Variables
+      action: github:actions:dispatch
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        workflowId: .github/workflows/setup-variables.yml
+        branchOrTagName: main
+        workflowInputs:
+          project_name: ${{ parameters.name }}
+
     - id: setup-ci-cd
       name: Setup CI/CD
       action: github:actions:dispatch
