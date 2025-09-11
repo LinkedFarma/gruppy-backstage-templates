@@ -42,71 +42,60 @@ jobs:
           REPO_NAME="${{ github.repository }}"
           APP_NAME="${REPO_NAME##*/}"
           
-          echo "Setting up variables for: $APP_NAME"
-          echo "Repository: $REPO_NAME"
+          echo "Setting up for: $APP_NAME"
           
-          # Check and set ECR_REPOSITORY if not exists
+          # FIRST: Create ECR repository if it doesn't exist - THIS MUST WORK
+          echo "🔍 Checking ECR repository: $APP_NAME"
+          if ! aws ecr describe-repositories --repository-names "$APP_NAME" --region us-east-1 > /dev/null 2>&1; then
+            echo "🚀 Creating ECR repository: $APP_NAME"
+            aws ecr create-repository --repository-name "$APP_NAME" --region us-east-1
+            if [ $? -eq 0 ]; then
+              echo "✅ ECR repository created successfully: $APP_NAME"
+            else
+              echo "❌ FAILED to create ECR repository: $APP_NAME"
+              exit 1
+            fi
+          else
+            echo "✅ ECR repository already exists: $APP_NAME"
+          fi
+          
+          # Now set variables
           if ! gh variable list | grep -q "ECR_REPOSITORY"; then
-            echo "Creating ECR_REPOSITORY variable: $APP_NAME"
             gh variable set ECR_REPOSITORY --body "$APP_NAME"
-          else
-            echo "ECR_REPOSITORY already exists"
+            echo "✅ Created ECR_REPOSITORY variable: $APP_NAME"
           fi
           
-          # Check and set APP_NAME if not exists
           if ! gh variable list | grep -q "APP_NAME"; then
-            echo "Creating APP_NAME variable: $APP_NAME"
             gh variable set APP_NAME --body "$APP_NAME"
-          else
-            echo "APP_NAME already exists"
+            echo "✅ Created APP_NAME variable: $APP_NAME"
           fi
           
-          # Check and set ECR_REGISTRY if not exists
           if ! gh variable list | grep -q "ECR_REGISTRY"; then
-            echo "Creating ECR_REGISTRY variable"
             gh variable set ECR_REGISTRY --body "124213954422.dkr.ecr.us-east-1.amazonaws.com"
-          else
-            echo "ECR_REGISTRY already exists"
+            echo "✅ Created ECR_REGISTRY variable"
           fi
           
-          # Check and set ARGOCD_SERVER if not exists
           if ! gh variable list | grep -q "ARGOCD_SERVER"; then
-            echo "Creating ARGOCD_SERVER variable"
             gh variable set ARGOCD_SERVER --body "argocd.gruppy.com.br"
-          else
-            echo "ARGOCD_SERVER already exists"
+            echo "✅ Created ARGOCD_SERVER variable"
           fi
           
-          # Check and set ArgoCD secrets if not exist
           if ! gh secret list | grep -q "ARGOCD_USERNAME"; then
-            echo "Creating ARGOCD_USERNAME secret"
             gh secret set ARGOCD_USERNAME --body "admin"
-          else
-            echo "ARGOCD_USERNAME already exists"
+            echo "✅ Created ARGOCD_USERNAME secret"
           fi
           
           if ! gh secret list | grep -q "ARGOCD_PASSWORD"; then
-            echo "Creating ARGOCD_PASSWORD secret"
             gh secret set ARGOCD_PASSWORD --body "oRXz0NXyU1N5gCDd"
-          else
-            echo "ARGOCD_PASSWORD already exists"
+            echo "✅ Created ARGOCD_PASSWORD secret"
           fi
           
-          # Output values for other jobs
+          # Output values
           echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
           echo "ecr_repository=$APP_NAME" >> $GITHUB_OUTPUT  
           echo "ecr_registry=124213954422.dkr.ecr.us-east-1.amazonaws.com" >> $GITHUB_OUTPUT
           
-          echo "✅ Setup complete!"
-          
-          # Create ECR repository if it doesn't exist
-          echo "Checking ECR repository..."
-          if ! aws ecr describe-repositories --repository-names "$APP_NAME" --region us-east-1 > /dev/null 2>&1; then
-            echo "Creating ECR repository: $APP_NAME"
-            aws ecr create-repository --repository-name "$APP_NAME" --region us-east-1 || echo "ECR creation failed - may need manual creation"
-          else
-            echo "ECR repository already exists: $APP_NAME"
-          fi
+          echo "🎉 SETUP COMPLETE - ECR: $APP_NAME is ready!"
 
   deploy:
     needs: [setup]
@@ -119,6 +108,49 @@ jobs:
     needs: [deploy]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Copy Missing Files from Template to Infra
+        env:
+          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
+          APP_NAME: ${{ vars.APP_NAME || github.event.repository.name }}
+          ENVIRONMENT: dev
+        run: |
+          echo "🔄 Copying missing template files to infra repository..."
+          
+          # Clone infra repository
+          git clone https://github.com/LinkedFarma/infra.git
+          cd infra
+          
+          # Create target directory if it doesn't exist
+          mkdir -p kubernetes/$APP_NAME/$ENVIRONMENT
+          
+          # Copy ingress.yaml if it exists in template but missing in infra
+          if [ -f "../k8s/ingress.yaml" ] && [ ! -f "kubernetes/$APP_NAME/$ENVIRONMENT/ingress.yaml" ]; then
+            echo "📋 Copying ingress.yaml from template..."
+            cp ../k8s/ingress.yaml kubernetes/$APP_NAME/$ENVIRONMENT/ingress.yaml
+          fi
+          
+          # Copy kustomization.yaml if it exists in template but missing in infra  
+          if [ -f "../k8s/kustomization.yaml" ] && [ ! -f "kubernetes/$APP_NAME/$ENVIRONMENT/kustomization.yaml" ]; then
+            echo "📋 Copying kustomization.yaml from template..."
+            cp ../k8s/kustomization.yaml kubernetes/$APP_NAME/$ENVIRONMENT/kustomization.yaml
+          fi
+          
+          # Check if there are changes to commit
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add -A
+          
+          if ! git diff --cached --exit-code > /dev/null; then
+            git commit -m "Copy missing template files for $APP_NAME-$ENVIRONMENT"
+            git push
+            echo "✅ Missing template files copied successfully!"
+          else
+            echo "✅ All template files already present"
+          fi
+          
       - name: Create ArgoCD Application
         env:
           ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER || 'argocd.gruppy.com.br' }}
