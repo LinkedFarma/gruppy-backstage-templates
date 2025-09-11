@@ -51,10 +51,7 @@ jobs:
             echo "needs_setup=true" >> $GITHUB_OUTPUT
             echo "Setup needed: AWS credentials not configured"
             echo "Please configure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY secrets"
-            exit 0
-          fi
-          
-          if [ -z "${{ vars.ECR_REPOSITORY }}" ]; then
+          elif [ -z "${{ vars.ECR_REPOSITORY }}" ]; then
             echo "needs_setup=true" >> $GITHUB_OUTPUT
             echo "Setup needed: ECR_REPOSITORY variable not found"
           else
