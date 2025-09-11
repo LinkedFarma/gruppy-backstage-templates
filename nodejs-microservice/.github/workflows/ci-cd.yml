@@ -80,15 +80,13 @@ jobs:
             echo "✅ Created ARGOCD_SERVER variable"
           fi
           
-          # Set Prefix-domain only if service is external and prefix is provided
-          if [ "${{ values.serviceType }}" = "external" ] && [ -n "${{ values.prefixDomain }}" ]; then
-            if ! gh variable list | grep -q "PREFIX_DOMAIN"; then
-              gh variable set PREFIX_DOMAIN --body "${{ values.prefixDomain }}"
-              echo "✅ Created PREFIX_DOMAIN variable (external service)"
-            fi
-          else
-            echo "✅ Skipping PREFIX_DOMAIN - internal service or no prefix provided"
+          # Set PREFIX_DOMAIN for external services
+          {% if values.serviceType === 'external' and values.prefixDomain %}
+          if ! gh variable list | grep -q "PREFIX_DOMAIN"; then
+            gh variable set PREFIX_DOMAIN --body "{{ values.prefixDomain }}"
+            echo "✅ Created PREFIX_DOMAIN variable: {{ values.prefixDomain }}"
           fi
+          {% endif %}
           
           if ! gh secret list | grep -q "ARGOCD_USERNAME"; then
             gh secret set ARGOCD_USERNAME --body "admin"
