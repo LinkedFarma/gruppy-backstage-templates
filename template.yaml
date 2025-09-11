@@ -57,6 +57,14 @@ spec:
         repoUrl: ${{ parameters.repoUrl }}
         description: ${{ parameters.description }}
 
+    - id: create-development-branch
+      name: Create Development Branch
+      action: github:createRef
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        ref: refs/heads/development
+        sha: ${{ steps.publish.output.commitHash }}
+
     - id: setup-variables
       name: Setup Repository Variables
       action: github:actions:dispatch
