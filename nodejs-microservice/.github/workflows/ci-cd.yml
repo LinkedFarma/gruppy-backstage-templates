@@ -92,9 +92,5 @@ jobs:
     if: always() && !cancelled() && !failure()
     uses: LinkedFarma/workflows/.github/workflows/argo-cd.yml@master
     with:
-      APP_NAME: ${{ values.name }}
-      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
-      CONTAINER_PORT: ${{ vars.CONTAINER_PORT }}
-      SERVICE_PORT: ${{ vars.SERVICE_PORT }}
-      PREFIX_DOMAIN: ${{ vars.PREFIX_DOMAIN }}
+      environment: dev
     secrets: inherit
