@@ -36,30 +36,30 @@ jobs:
         run: |
           if [ -z "${{ vars.ECR_REPOSITORY }}" ]; then
             echo "needs_setup=true" >> $GITHUB_OUTPUT
-            echo "🔧 Setup needed: ECR_REPOSITORY variable not found"
+            echo "Setup needed: ECR_REPOSITORY variable not found"
           else
-            echo "🔍 ECR_REPOSITORY variable exists: ${{ vars.ECR_REPOSITORY }}"
-            echo "🔍 Checking if ECR repository exists in AWS..."
+            echo "ECR_REPOSITORY variable exists: ${{ vars.ECR_REPOSITORY }}"
+            echo "Checking if ECR repository exists in AWS..."
             
             # Check if ECR repository actually exists
-            if aws ecr describe-repositories --repository-names "${{ vars.ECR_REPOSITORY }}" --region us-east-1 >/dev/null 2>&1; then
+            if aws ecr describe-repositories --repository-names "${{ vars.ECR_REPOSITORY }}" --region us-east-1 > /dev/null 2>&1; then
               echo "needs_setup=false" >> $GITHUB_OUTPUT
-              echo "✅ Setup complete: ECR repository exists in AWS"
+              echo "Setup complete: ECR repository exists in AWS"
               
               # Verificar se variáveis necessárias estão definidas
               if [ -z "${{ vars.APP_NAME }}" ]; then
-                echo "🔧 Setting APP_NAME variable..."
+                echo "Setting APP_NAME variable..."
                 gh variable set APP_NAME --body "${{ vars.ECR_REPOSITORY }}"
               fi
               
               if [ -z "${{ vars.ECR_REGISTRY }}" ]; then
-                echo "🔧 Setting ECR_REGISTRY variable..."
+                echo "Setting ECR_REGISTRY variable..."
                 gh variable set ECR_REGISTRY --body "124213954422.dkr.ecr.us-east-1.amazonaws.com"
               fi
             else
               echo "needs_setup=true" >> $GITHUB_OUTPUT
-              echo "❌ Setup needed: ECR repository '${{ vars.ECR_REPOSITORY }}' does not exist in AWS"
-              echo "🛠️  Please create the ECR repository manually: aws ecr create-repository --repository-name ${{ vars.ECR_REPOSITORY }} --region us-east-1"
+              echo "Setup needed: ECR repository '${{ vars.ECR_REPOSITORY }}' does not exist in AWS"
+              echo "Please create the ECR repository manually: aws ecr create-repository --repository-name ${{ vars.ECR_REPOSITORY }} --region us-east-1"
               exit 1
             fi
           fi
@@ -84,22 +84,22 @@ jobs:
           APP_NAME: ${{ vars.APP_NAME }}
           ENVIRONMENT: dev
         run: |
-          echo "🚀 Creating ArgoCD application: $APP_NAME-$ENVIRONMENT"
+          echo "Creating ArgoCD application: $APP_NAME-$ENVIRONMENT"
           
           # Install ArgoCD CLI
           curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
           sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
           
           # Login to ArgoCD
-          echo "🔐 Authenticating with ArgoCD using username/password..."
+          echo "Authenticating with ArgoCD using username/password..."
           argocd login $ARGOCD_SERVER --username $ARGOCD_USERNAME --password $ARGOCD_PASSWORD --insecure --grpc-web
           
           # Check if application already exists
-          if argocd app get $APP_NAME-$ENVIRONMENT --grpc-web >/dev/null 2>&1; then
-            echo "✅ Application $APP_NAME-$ENVIRONMENT already exists, syncing..."
+          if argocd app get $APP_NAME-$ENVIRONMENT --grpc-web > /dev/null 2>&1; then
+            echo "Application $APP_NAME-$ENVIRONMENT already exists, syncing..."
             argocd app sync $APP_NAME-$ENVIRONMENT --grpc-web
           else
-            echo "🆕 Creating new ArgoCD application: $APP_NAME-$ENVIRONMENT"
+            echo "Creating new ArgoCD application: $APP_NAME-$ENVIRONMENT"
             argocd app create $APP_NAME-$ENVIRONMENT \
               --repo git@github.com:LinkedFarma/infra.git \
               --path kubernetes/$APP_NAME/$ENVIRONMENT \
@@ -111,11 +111,11 @@ jobs:
               --self-heal \
               --grpc-web
             
-            echo "⏳ Waiting for application to be ready..."
+            echo "Waiting for application to be ready..."
             sleep 10
             
-            echo "🔄 Syncing application..."
-            argocd app sync $APP_NAME-$ENVIRONMENT --grpc-web || echo "⚠️ Sync may already be in progress"
+            echo "Syncing application..."
+            argocd app sync $APP_NAME-$ENVIRONMENT --grpc-web || echo "Sync may already be in progress"
           fi
           
-          echo "✅ ArgoCD application $APP_NAME-$ENVIRONMENT is ready!"
+          echo "ArgoCD application $APP_NAME-$ENVIRONMENT is ready!"
