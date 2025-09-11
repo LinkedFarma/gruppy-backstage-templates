@@ -35,18 +35,31 @@ jobs:
           APP_NAME="${REPO_NAME##*/}"
           
           echo "Setting up variables for: $APP_NAME"
+          echo "Repository: $REPO_NAME"
           
-          # Set all required variables
-          gh variable set ECR_REPOSITORY --body "$APP_NAME" || echo "ECR_REPOSITORY already exists"
-          gh variable set APP_NAME --body "$APP_NAME" || echo "APP_NAME already exists"
-          gh variable set ECR_REGISTRY --body "124213954422.dkr.ecr.us-east-1.amazonaws.com" || echo "ECR_REGISTRY already exists"
-          gh variable set ARGOCD_SERVER --body "argocd.gruppy.com.br" || echo "ARGOCD_SERVER already exists"
+          # Set all required variables (force overwrite)
+          echo "Setting ECR_REPOSITORY to: $APP_NAME"
+          gh variable set ECR_REPOSITORY --body "$APP_NAME"
           
-          # Set ArgoCD secrets
-          gh secret set ARGOCD_USERNAME --body "admin" || echo "ARGOCD_USERNAME already exists"
-          gh secret set ARGOCD_PASSWORD --body "oRXz0NXyU1N5gCDd" || echo "ARGOCD_PASSWORD already exists"
+          echo "Setting APP_NAME to: $APP_NAME"  
+          gh variable set APP_NAME --body "$APP_NAME"
           
-          echo "Variables setup complete!"
+          echo "Setting ECR_REGISTRY to: 124213954422.dkr.ecr.us-east-1.amazonaws.com"
+          gh variable set ECR_REGISTRY --body "124213954422.dkr.ecr.us-east-1.amazonaws.com"
+          
+          echo "Setting ARGOCD_SERVER to: argocd.gruppy.com.br"
+          gh variable set ARGOCD_SERVER --body "argocd.gruppy.com.br"
+          
+          # Set ArgoCD secrets (force overwrite)
+          echo "Setting ArgoCD credentials..."
+          gh secret set ARGOCD_USERNAME --body "admin"
+          gh secret set ARGOCD_PASSWORD --body "oRXz0NXyU1N5gCDd"
+          
+          echo "✅ Variables setup complete!"
+          echo "✅ ECR_REPOSITORY: $APP_NAME"
+          echo "✅ APP_NAME: $APP_NAME"
+          echo "✅ ECR_REGISTRY: 124213954422.dkr.ecr.us-east-1.amazonaws.com"
+          echo "✅ ARGOCD_SERVER: argocd.gruppy.com.br"
           
           # Create ECR repository if it doesn't exist
           echo "Checking ECR repository..."
@@ -62,9 +75,6 @@ jobs:
     uses: LinkedFarma/workflows/.github/workflows/argo-cd.yml@master
     with:
       environment: dev
-      ecr_repository: ${{ vars.ECR_REPOSITORY || github.event.repository.name }}
-      app_name: ${{ vars.APP_NAME || github.event.repository.name }}
-      ecr_registry: ${{ vars.ECR_REGISTRY || '124213954422.dkr.ecr.us-east-1.amazonaws.com' }}
     secrets: inherit
 
   create-argocd-app:
