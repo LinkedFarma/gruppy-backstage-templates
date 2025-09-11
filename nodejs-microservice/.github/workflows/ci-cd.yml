@@ -125,7 +125,7 @@ jobs:
           else
             echo "🆕 Creating new ArgoCD application: $APP_NAME-$ENVIRONMENT"
             argocd app create $APP_NAME-$ENVIRONMENT \
-              --repo https://github.com/LinkedFarma/infra \
+              --repo git@github.com:LinkedFarma/infra.git \
               --path kubernetes/$APP_NAME/$ENVIRONMENT \
               --dest-server https://kubernetes.default.svc \
               --dest-namespace $APP_NAME-$ENVIRONMENT \
