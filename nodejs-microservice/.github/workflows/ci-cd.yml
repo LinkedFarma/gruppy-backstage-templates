@@ -120,7 +120,7 @@ jobs:
           echo "🔄 Copying missing template files to infra repository..."
           
           # Clone infra repository
-          git clone https://github.com/LinkedFarma/infra.git
+          git clone git@github.com:LinkedFarma/infra.git
           cd infra
           
           # Create target directory if it doesn't exist
