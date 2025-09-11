@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - development
       
   workflow_dispatch:
 
@@ -14,13 +13,11 @@ permissions:
   id-token: write
 
 jobs:
-  setup-check:
+  setup:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       actions: write
-    outputs:
-      needs_setup: ${{ steps.check.outputs.needs_setup }}
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -29,43 +26,38 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Check if setup is needed
-        id: check
+      - name: Setup repository variables
         env:
           GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
         run: |
-          if [ -z "${{ vars.ECR_REPOSITORY }}" ]; then
-            echo "needs_setup=true" >> $GITHUB_OUTPUT
-            echo "Setup needed: ECR_REPOSITORY variable not found"
+          REPO_NAME="${{ github.repository }}"
+          APP_NAME="${REPO_NAME##*/}"
+          
+          echo "Setting up variables for: $APP_NAME"
+          
+          # Set all required variables
+          gh variable set ECR_REPOSITORY --body "$APP_NAME" || echo "ECR_REPOSITORY already exists"
+          gh variable set APP_NAME --body "$APP_NAME" || echo "APP_NAME already exists"
+          gh variable set ECR_REGISTRY --body "124213954422.dkr.ecr.us-east-1.amazonaws.com" || echo "ECR_REGISTRY already exists"
+          gh variable set ARGOCD_SERVER --body "argocd.gruppy.com.br" || echo "ARGOCD_SERVER already exists"
+          
+          # Set ArgoCD secrets
+          gh secret set ARGOCD_USERNAME --body "admin" || echo "ARGOCD_USERNAME already exists"
+          gh secret set ARGOCD_PASSWORD --body "oRXz0NXyU1N5gCDd" || echo "ARGOCD_PASSWORD already exists"
+          
+          echo "Variables setup complete!"
+          
+          # Create ECR repository if it doesn't exist
+          echo "Checking ECR repository..."
+          if ! aws ecr describe-repositories --repository-names "$APP_NAME" --region us-east-1 > /dev/null 2>&1; then
+            echo "Creating ECR repository: $APP_NAME"
+            aws ecr create-repository --repository-name "$APP_NAME" --region us-east-1 || echo "ECR creation failed - may need manual creation"
           else
-            echo "ECR_REPOSITORY variable exists: ${{ vars.ECR_REPOSITORY }}"
-            echo "Checking if ECR repository exists in AWS..."
-            
-            # Check if ECR repository actually exists
-            if aws ecr describe-repositories --repository-names "${{ vars.ECR_REPOSITORY }}" --region us-east-1 > /dev/null 2>&1; then
-              echo "needs_setup=false" >> $GITHUB_OUTPUT
-              echo "Setup complete: ECR repository exists in AWS"
-              
-              # Verificar se variáveis necessárias estão definidas
-              if [ -z "${{ vars.APP_NAME }}" ]; then
-                echo "Setting APP_NAME variable..."
-                gh variable set APP_NAME --body "${{ vars.ECR_REPOSITORY }}"
-              fi
-              
-              if [ -z "${{ vars.ECR_REGISTRY }}" ]; then
-                echo "Setting ECR_REGISTRY variable..."
-                gh variable set ECR_REGISTRY --body "124213954422.dkr.ecr.us-east-1.amazonaws.com"
-              fi
-            else
-              echo "needs_setup=true" >> $GITHUB_OUTPUT
-              echo "Setup needed: ECR repository '${{ vars.ECR_REPOSITORY }}' does not exist in AWS"
-              echo "Please create the ECR repository manually: aws ecr create-repository --repository-name ${{ vars.ECR_REPOSITORY }} --region us-east-1"
-              exit 1
-            fi
+            echo "ECR repository already exists: $APP_NAME"
           fi
 
   deploy:
-    needs: [setup-check]
+    needs: [setup]
     uses: LinkedFarma/workflows/.github/workflows/argo-cd.yml@master
     with:
       environment: dev
