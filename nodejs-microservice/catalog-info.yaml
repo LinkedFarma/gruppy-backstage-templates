@@ -11,65 +11,18 @@ metadata:
     - nodejs
     - microservice
     - express
-    {% if values.serviceType == 'external' -%}
-    - external-service
-    {% else -%}
-    - internal-service
-    {% endif -%}
+    - ${{ values.serviceType }}-service
   links:
     - url: https://github.com/LinkedFarma/${{ values.name }}
       title: GitHub Repository
       icon: github
-    {% if values.serviceType == 'external' and values.prefixDomain -%}
+    {% if values.serviceType == 'external' and values.prefixDomain %}
     - url: https://${{ values.prefixDomain }}.linkedfarma.com.br
       title: Production Environment
       icon: web
-    {% endif -%}
+    {% endif %}
 spec:
   type: service
   lifecycle: experimental
   owner: user:development/guest
   system: gruppy-platform
-  {% if values.serviceType == 'external' -%}
-  providesApis:
-    - ${{ values.name }}-api
-  {% endif -%}
----
-{% if values.serviceType == 'external' -%}
-apiVersion: backstage.io/v1alpha1
-kind: API
-metadata:
-  name: ${{ values.name }}-api
-  title: ${{ values.name | title }} API
-  description: API endpoints for ${{ values.description }}
-  tags:
-    - rest
-    - nodejs
-spec:
-  type: openapi
-  lifecycle: experimental
-  owner: user:development/guest
-  system: gruppy-platform
-  definition: |
-    openapi: 3.0.0
-    info:
-      title: ${{ values.name | title }} API
-      description: ${{ values.description }}
-      version: 1.0.0
-    servers:
-      - url: https://${{ values.prefixDomain }}.linkedfarma.com.br
-        description: Production server
-    paths:
-      /health:
-        get:
-          summary: Health check endpoint
-          responses:
-            '200':
-              description: Service is healthy
-      /:
-        get:
-          summary: Root endpoint
-          responses:
-            '200':
-              description: Service information
-{% endif -%}
