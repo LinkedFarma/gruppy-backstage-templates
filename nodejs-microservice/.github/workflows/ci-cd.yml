@@ -42,22 +42,27 @@ jobs:
           REPO_NAME="${{ github.repository }}"
           APP_NAME="${REPO_NAME##*/}"
           
-          echo "Setting up for: $APP_NAME"
-          
-          # FIRST: Create ECR repository if it doesn't exist - THIS MUST WORK
-          echo "🔍 Checking ECR repository: $APP_NAME"
-          if ! aws ecr describe-repositories --repository-names "$APP_NAME" --region us-east-1 > /dev/null 2>&1; then
-            echo "🚀 Creating ECR repository: $APP_NAME"
-            aws ecr create-repository --repository-name "$APP_NAME" --region us-east-1
+      - name: Create ECR repository if not exists
+        run: |
+          echo "🔍 Checking ECR repository: $REPO_NAME"
+          if ! aws ecr describe-repositories --repository-names "$REPO_NAME" --region us-east-1 > /dev/null 2>&1; then
+            echo "🚀 Creating ECR repository: $REPO_NAME"
+            aws ecr create-repository --repository-name $REPO_NAME --region us-east-1
             if [ $? -eq 0 ]; then
-              echo "✅ ECR repository created successfully: $APP_NAME"
+              echo "✅ ECR repository created successfully: $REPO_NAME"
             else
-              echo "❌ FAILED to create ECR repository: $APP_NAME"
+              echo "❌ FAILED to create ECR repository: $REPO_NAME"
               exit 1
             fi
           else
-            echo "✅ ECR repository already exists: $APP_NAME"
+            echo "✅ ECR repository already exists: $REPO_NAME"
           fi
+        env:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          REPO_NAME: ${{ steps.extract-name.outputs.service_name }}
           
           # Now set variables
           if ! gh variable list | grep -q "ECR_REPOSITORY"; then

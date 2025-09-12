@@ -105,15 +105,22 @@ jobs:
           echo "ecr_registry=124213954422.dkr.ecr.us-east-1.amazonaws.com" >> $GITHUB_OUTPUT
           
           echo "✅ Setup complete!"
-          
-          # Create ECR repository if it doesn't exist
+
+      - name: Create ECR repository if not exists
+        run: |
           echo "Checking ECR repository..."
-          if ! aws ecr describe-repositories --repository-names "$APP_NAME" --region us-east-1 > /dev/null 2>&1; then
-            echo "Creating ECR repository: $APP_NAME"
-            aws ecr create-repository --repository-name "$APP_NAME" --region us-east-1 || echo "ECR creation failed - may need manual creation"
+          if ! aws ecr describe-repositories --repository-names "$REPO_NAME" --region us-east-1 > /dev/null 2>&1; then
+            echo "Creating ECR repository: $REPO_NAME"
+            aws ecr create-repository --repository-name $REPO_NAME --region us-east-1 || echo "ECR creation failed - may need manual creation"
           else
-            echo "ECR repository already exists: $APP_NAME"
+            echo "ECR repository already exists: $REPO_NAME"
           fi
+        env:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          REPO_NAME: ${{ github.event.repository.name }}
   deploy:
     needs: [setup]
     uses: LinkedFarma/workflows/.github/workflows/argo-cd.yml@master
