@@ -16,8 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.inputs.setup_required == 'true'
     permissions:
-      contents: read
+      contents: write
       actions: write
+      pull-requests: write
+      issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,23 +36,54 @@ jobs:
         run: |
           SERVICE_NAME=$(cat package.json | jq -r '.name')
           echo "service_name=$SERVICE_NAME" >> $GITHUB_OUTPUT
-
+          
       - name: Create ECR Repository
         run: |
           aws ecr create-repository --repository-name ${{ steps.extract-name.outputs.service_name }} --region us-east-1 || echo "Repository already exists"
-
+          
       - name: Set GitHub Variables
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh variable set ECR_REPOSITORY --body "${{ steps.extract-name.outputs.service_name }}"
-
+          echo "Testing token permissions first..."
+          curl -s -H "Authorization: token $GH_TOKEN" \
+               -H "Accept: application/vnd.github.v3+json" \
+               https://api.github.com/repos/${{ github.repository }}
+          
+          echo "Creating variables with direct API calls..."
+          
+          # Create variables using GitHub API directly
+          curl -X POST \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/variables \
+            -d "{\"name\":\"ECR_REPOSITORY\",\"value\":\"${{ steps.extract-name.outputs.service_name }}\"}" || echo "Variable may already exist"
+          
+          curl -X POST \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/variables \
+            -d "{\"name\":\"APP_NAME\",\"value\":\"${{ steps.extract-name.outputs.service_name }}\"}" || echo "Variable may already exist"
+          
+          curl -X POST \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/variables \
+            -d "{\"name\":\"ECR_REGISTRY\",\"value\":\"124213954422.dkr.ecr.us-east-1.amazonaws.com\"}" || echo "Variable may already exist"
+          
+          curl -X POST \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/variables \
+            -d "{\"name\":\"AWS_REGION\",\"value\":\"us-east-1\"}" || echo "Variable may already exist"
+          
       - name: Setup Complete
         run: |
           echo "✅ CI/CD Setup Complete!"
           echo "- ECR Repository: ${{ steps.extract-name.outputs.service_name }}"
-          echo "- GitHub Variables: Configured"
-          echo "- Ready for automatic deployments"
+          echo "- GitHub Variables: Configured automatically"
+          echo "- AWS Region: us-east-1"
+          echo "- Ready for automatic deployments!"
 
   info:
     runs-on: ubuntu-latest

@@ -118,15 +118,20 @@ jobs:
     steps:
       - name: Create ArgoCD Application
         env:
-          ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER || 'argocd.gruppy.com.br' }}
-          ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME || 'admin' }}
-          ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD || 'oRXz0NXyU1N5gCDd' }}
-          APP_NAME: ${{ vars.APP_NAME || github.event.repository.name }}
+          ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER }}
+          ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME }}
+          ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
+          APP_NAME: ${{ vars.APP_NAME }}
+          DEFAULT_ARGOCD_SERVER: argocd.gruppy.com.br
+          DEFAULT_ARGOCD_USERNAME: admin
+          DEFAULT_ARGOCD_PASSWORD: oRXz0NXyU1N5gCDd
           ENVIRONMENT: dev
         run: |
           # Set default values if not provided
-          ARGOCD_SERVER=${ARGOCD_SERVER:-argocd.gruppy.com.br}
-          ARGOCD_USERNAME=${ARGOCD_USERNAME:-admin}
+          ARGOCD_SERVER=${ARGOCD_SERVER:-$DEFAULT_ARGOCD_SERVER}
+          ARGOCD_USERNAME=${ARGOCD_USERNAME:-$DEFAULT_ARGOCD_USERNAME}
+          ARGOCD_PASSWORD=${ARGOCD_PASSWORD:-$DEFAULT_ARGOCD_PASSWORD}
+          APP_NAME=${APP_NAME:-${{ github.event.repository.name }}}
           
           echo "Creating ArgoCD application: $APP_NAME-$ENVIRONMENT"
           
@@ -159,7 +164,9 @@ jobs:
             sleep 10
             
             echo "Syncing application..."
-            argocd app sync $APP_NAME-$ENVIRONMENT --grpc-web || echo "Sync may already be in progress"
+            if ! argocd app sync $APP_NAME-$ENVIRONMENT --grpc-web; then
+              echo "Sync may already be in progress"
+            fi
           fi
           
           echo "ArgoCD application $APP_NAME-$ENVIRONMENT is ready!"
