@@ -18,6 +18,7 @@ jobs:
     permissions:
       contents: read
       actions: write
+      repository-administration: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
