@@ -1,0 +1,28 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  title: ${{ values.name }}
+  description: ${{ values.description }}
+  annotations:
+    github.com/project-slug: LinkedFarma/${{ values.name }}
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - nodejs
+    - microservice
+    - express
+    - ${{ values.serviceType }}-service
+  links:
+    - url: https://github.com/LinkedFarma/${{ values.name }}
+      title: GitHub Repository
+      icon: github
+    {% if values.serviceType == 'external' and values.prefixDomain %}
+    - url: https://${{ values.prefixDomain }}.linkedfarma.com.br
+      title: Production Environment
+      icon: web
+    {% endif %}
+spec:
+  type: service
+  lifecycle: experimental
+  owner: user:development/guest
+  system: gruppy-platform
