@@ -37,7 +37,9 @@ jobs:
 
       - name: Create ECR Repository
         run: |
-          aws ecr create-repository --repository-name ${{ steps.extract-name.outputs.service_name }} --region us-east-1 || echo "Repository already exists"
+          if ! aws ecr create-repository --repository-name ${{ steps.extract-name.outputs.service_name }} --region us-east-1; then
+            echo "Repository already exists"
+          fi
 
       - name: Set GitHub Variables
         env:
