@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Setup repository variables
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
           PROJECT_NAME: ${{ inputs.project_name }}
         run: |
           echo "Setting up variables for project: $PROJECT_NAME"
