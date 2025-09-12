@@ -4,7 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT ? process.env.PORT : 3000;
 
 // Middleware de segurança
 app.use(helmet());
@@ -59,7 +59,7 @@ app.get('/api/info', (req, res) => {
     name: '{{ values.name }}',
     description: '${{ values.description }}',
     version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env.NODE_ENV ? process.env.NODE_ENV : 'development',
     timestamp: new Date().toISOString()
   });
 });
@@ -95,7 +95,7 @@ process.on('SIGINT', () => {
 app.listen(port, () => {
   console.log(`🚀 {{ values.name }} running on port ${port}`);
   console.log(`📖 Health check: http://localhost:${port}/health`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV ? process.env.NODE_ENV : 'development'}`);
 });
 
 module.exports = app;
