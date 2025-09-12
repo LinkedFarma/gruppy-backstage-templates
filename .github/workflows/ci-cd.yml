@@ -51,8 +51,19 @@ jobs:
       - name: Extract service name from package.json
         id: extract-name
         run: |
-          SERVICE_NAME=$(cat package.json | jq -r '.name')
+          # Try to get name from package.json, fallback to repository name
+          if [ -f nodejs-microservice/package.json ]; then
+            SERVICE_NAME=$(cat nodejs-microservice/package.json | jq -r '.name // empty')
+          fi
+          
+          # If still empty, use repository name
+          if [ -z "$SERVICE_NAME" ] || [ "$SERVICE_NAME" = "null" ]; then
+            SERVICE_NAME="${{ github.repository }}"
+            SERVICE_NAME="${SERVICE_NAME##*/}"  # Get just the repo name part
+          fi
+          
           echo "service_name=$SERVICE_NAME" >> $GITHUB_OUTPUT
+          echo "Using service name: $SERVICE_NAME"
 
       - name: Create ECR Repository
         run: |

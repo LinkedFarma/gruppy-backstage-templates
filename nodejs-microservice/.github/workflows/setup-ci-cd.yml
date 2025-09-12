@@ -38,8 +38,8 @@ jobs:
         id: extract-name
         run: |
           # Try to get name from package.json, fallback to repository name
-          if [ -f package.json ]; then
-            SERVICE_NAME=$(cat package.json | jq -r '.name // empty')
+          if [ -f nodejs-microservice/package.json ]; then
+            SERVICE_NAME=$(cat nodejs-microservice/package.json | jq -r '.name // empty')
           fi
           
           # If still empty, use repository name
