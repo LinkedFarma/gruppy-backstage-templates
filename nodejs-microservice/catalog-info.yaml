@@ -11,31 +11,31 @@ metadata:
     - nodejs
     - microservice
     - express
-    {% if values.serviceType == 'external' %}
+    {% if values.serviceType == 'external' -%}
     - external-service
-    {% else %}
+    {% else -%}
     - internal-service
-    {% endif %}
+    {% endif -%}
   links:
     - url: https://github.com/LinkedFarma/${{ values.name }}
       title: GitHub Repository
       icon: github
-    {% if values.serviceType == 'external' and values.prefixDomain %}
+    {% if values.serviceType == 'external' and values.prefixDomain -%}
     - url: https://${{ values.prefixDomain }}.linkedfarma.com.br
       title: Production Environment
       icon: web
-    {% endif %}
+    {% endif -%}
 spec:
   type: service
   lifecycle: experimental
   owner: user:development/guest
   system: gruppy-platform
-  {% if values.serviceType == 'external' %}
+  {% if values.serviceType == 'external' -%}
   providesApis:
     - ${{ values.name }}-api
-  {% endif %}
+  {% endif -%}
 ---
-{% if values.serviceType == 'external' %}
+{% if values.serviceType == 'external' -%}
 apiVersion: backstage.io/v1alpha1
 kind: API
 metadata:
@@ -72,4 +72,4 @@ spec:
           responses:
             '200':
               description: Service information
-{% endif %}
+{% endif -%}
