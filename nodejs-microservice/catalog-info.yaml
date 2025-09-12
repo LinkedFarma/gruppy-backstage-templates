@@ -2,7 +2,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: ${{ values.name }}
-  title: ${{ values.name | title }}
+  title: ${{ values.name }}
   description: ${{ values.description }}
   annotations:
     github.com/project-slug: LinkedFarma/${{ values.name }}
