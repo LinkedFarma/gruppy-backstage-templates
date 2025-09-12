@@ -62,7 +62,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
         run: |
-          gh variable set ECR_REPOSITORY --body "${{ steps.extract-name.outputs.service_name }}"
+          SERVICE_NAME="${{ steps.extract-name.outputs.service_name }}"
+          echo "Setting ECR_REPOSITORY variable to: $SERVICE_NAME"
+          gh variable set ECR_REPOSITORY --body "$SERVICE_NAME"
 
       - name: Setup Complete
         run: |

@@ -61,17 +61,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
         run: |
-          # Try to set the variable with the default token first
-          if gh variable set ECR_REPOSITORY --body "${{ steps.extract-name.outputs.service_name }}"; then
-            echo "Variable set successfully with GITHUB_TOKEN"
+          # Get the service name from the previous step
+          SERVICE_NAME="${{ steps.extract-name.outputs.service_name }}"
+          
+          echo "Setting ECR_REPOSITORY variable to: $SERVICE_NAME"
+          
+          # Try to set the variable
+          if gh variable set ECR_REPOSITORY --body "$SERVICE_NAME"; then
+            echo "Variable set successfully with GH_ADMIN_TOKEN"
           else
-            echo "Failed to set variable with GITHUB_TOKEN, trying with GH_ADMIN_TOKEN"
-            # Fallback to admin token if available
-            if [ -n "${{ secrets.GH_ADMIN_TOKEN }}" ]; then
-              GH_TOKEN="${{ secrets.GH_ADMIN_TOKEN }}" gh variable set ECR_REPOSITORY --body "${{ steps.extract-name.outputs.service_name }}" || echo "Variable setting failed - needs to be set manually"
-            else
-              echo "GH_ADMIN_TOKEN not available - variable needs to be set manually"
-            fi
+            echo "Failed to set variable - needs to be set manually"
+            echo "Command that failed: gh variable set ECR_REPOSITORY --body \"$SERVICE_NAME\""
           fi
 
       - name: Setup Complete
