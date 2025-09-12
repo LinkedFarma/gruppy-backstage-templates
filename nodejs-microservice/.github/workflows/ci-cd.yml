@@ -81,7 +81,7 @@ jobs:
           fi
           
           # Set PREFIX_DOMAIN for external services
-          {% if values.serviceType === 'external' and values.prefixDomain %}
+          {% if values.serviceType == 'external' and values.prefixDomain %}
           if ! gh variable list | grep -q "PREFIX_DOMAIN"; then
             gh variable set PREFIX_DOMAIN --body "{{ values.prefixDomain }}"
             echo "✅ Created PREFIX_DOMAIN variable: {{ values.prefixDomain }}"
