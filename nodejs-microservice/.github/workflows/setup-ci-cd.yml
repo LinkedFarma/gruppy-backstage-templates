@@ -11,6 +11,11 @@ on:
           - 'true'
           - 'false'
 
+permissions:
+  contents: read
+  actions: write
+  variables: write
+
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -43,9 +48,20 @@ jobs:
 
       - name: Set GitHub Variables
         env:
-          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh variable set ECR_REPOSITORY --body "${{ steps.extract-name.outputs.service_name }}"
+          # Try to set the variable with the default token first
+          if gh variable set ECR_REPOSITORY --body "${{ steps.extract-name.outputs.service_name }}"; then
+            echo "Variable set successfully with GITHUB_TOKEN"
+          else
+            echo "Failed to set variable with GITHUB_TOKEN, trying with GH_ADMIN_TOKEN"
+            # Fallback to admin token if available
+            if [ -n "${{ secrets.GH_ADMIN_TOKEN }}" ]; then
+              GH_TOKEN="${{ secrets.GH_ADMIN_TOKEN }}" gh variable set ECR_REPOSITORY --body "${{ steps.extract-name.outputs.service_name }}" || echo "Variable setting failed - needs to be set manually"
+            else
+              echo "GH_ADMIN_TOKEN not available - variable needs to be set manually"
+            fi
+          fi
 
       - name: Setup Complete
         run: |
