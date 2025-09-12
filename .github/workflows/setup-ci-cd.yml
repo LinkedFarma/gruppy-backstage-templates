@@ -43,7 +43,7 @@ jobs:
           
       - name: Set GitHub Variables
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
         run: |
           echo "Testing token permissions first..."
           curl -s -H "Authorization: token $GH_TOKEN" \
