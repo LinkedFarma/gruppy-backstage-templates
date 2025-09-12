@@ -44,6 +44,13 @@ jobs:
           
           echo "Setting up variables for: $APP_NAME"
           echo "Repository: $REPO_NAME"
+          echo "Using token: ${GH_TOKEN:0:8}..."
+          
+          # Verify token has permissions
+          if ! gh auth status; then
+            echo "❌ Token authentication failed"
+            exit 1
+          fi
           
           # Check and set ECR_REPOSITORY if not exists
           if ! gh variable list | grep -q "ECR_REPOSITORY"; then
