@@ -31,6 +31,17 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
 
+      - name: Fix package.json name
+        run: |
+          # Replace template variables in package.json with actual repository name
+          REPO_NAME="${{ github.repository }}"
+          REPO_NAME="${REPO_NAME##*/}"  # Get just the repo name part
+          if [ -f nodejs-microservice/package.json ]; then
+            sed -i "s/\${{ values.name }}/$REPO_NAME/g" nodejs-microservice/package.json
+            sed -i "s/\${{ values.description }}/Generated microservice for $REPO_NAME/g" nodejs-microservice/package.json
+            echo "Updated package.json with repository name: $REPO_NAME"
+          fi
+
       - name: Extract service name from package.json
         id: extract-name
         run: |
