@@ -40,6 +40,21 @@ jobs:
             sed -i "s/\${{ values.name }}/$REPO_NAME/g" nodejs-microservice/package.json
             sed -i "s/\${{ values.description }}/Generated microservice for $REPO_NAME/g" nodejs-microservice/package.json
             echo "Updated package.json with repository name: $REPO_NAME"
+
+      - name: Extract prefix domain from catalog-info.yaml
+        id: extract-domain
+        run: |
+          # Extract prefix domain from catalog-info.yaml URL
+          if [ -f catalog-info.yaml ]; then
+            DOMAIN_URL=$(grep -o "https://[^.]*.linkedfarma.com.br" catalog-info.yaml | head -1)
+            if [ ! -z "$DOMAIN_URL" ]; then
+              PREFIX_DOMAIN=$(echo "$DOMAIN_URL" | sed "s/https://([^.]*).linkedfarma.com.br/1/")
+              echo "prefix_domain=$PREFIX_DOMAIN" >> $GITHUB_OUTPUT
+              echo "Extracted prefix domain: $PREFIX_DOMAIN"
+            else
+              echo "No domain URL found in catalog-info.yaml"
+            fi
+          fi
           fi
 
       - name: Extract service name from package.json
