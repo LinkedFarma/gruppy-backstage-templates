@@ -135,6 +135,6 @@ jobs:
 
   deploy:
     needs: [setup-check, setup]
-    if: always() && !cancelled() && !failure()
+    if: always() && !cancelled() && (needs.setup-check.outputs.needs_setup == 'false' || needs.setup.result == 'success')
     uses: LinkedFarma/workflows/.github/workflows/argo-cd.yml@master
     secrets: inherit
