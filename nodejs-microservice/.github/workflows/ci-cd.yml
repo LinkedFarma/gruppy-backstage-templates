@@ -34,6 +34,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup-check
     if: needs.setup-check.outputs.needs_setup == 'true'
+    outputs:
+      service_name: ${{ steps.extract-name.outputs.service_name }}
+      prefix_domain: ${{ steps.extract-domain.outputs.prefix_domain }}
+      setup_complete: ${{ steps.setup-complete.outputs.setup_complete }}
     permissions:
       contents: read
       actions: write
@@ -124,6 +128,7 @@ jobs:
           gh variable set PREFIX_DOMAIN --body "$PREFIX_DOMAIN"
           
       - name: Setup Complete
+        id: setup-complete
         run: |
           echo "✅ CI/CD Setup Complete!"
           echo "- ECR Repository: ${{ steps.extract-name.outputs.service_name }}"
@@ -132,9 +137,18 @@ jobs:
           echo "- GitHub Variables: Configured"
           echo "- Using organization ECR_REGISTRY and AWS_REGION"
           echo "- Ready for automatic deployments"
+          echo "setup_complete=true" >> $GITHUB_OUTPUT
+
+      - name: Trigger Deploy Workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🚀 Disparando nova execução para deploy com variáveis atualizadas..."
+          gh workflow run "Deploy Application" --repo ${{ github.repository }} --ref ${{ github.ref_name }}
+          echo "✅ Nova execução disparada! As variáveis agora estarão disponíveis para o deploy."
 
   deploy:
-    needs: [setup-check, setup]
-    if: always() && !cancelled() && (needs.setup-check.outputs.needs_setup == 'false' || needs.setup.result == 'success')
+    needs: [setup-check]
+    if: needs.setup-check.outputs.needs_setup == 'false'
     uses: LinkedFarma/workflows/.github/workflows/argo-cd.yml@master
     secrets: inherit
