@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make:*)",
+      "Bash(pnpm:*)",
+      "Bash(npm:*)",
+      "Bash(git:*)",
+      "Bash(docker:*)",
+      "Read(./nodejs-microservice/**)",
+      "Edit(./nodejs-microservice/**)",
+      "Write(./nodejs-microservice/**)",
+      "Read(./skeleton/**)",
+      "Edit(./skeleton/**)",
+      "Write(./skeleton/**)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(./node_modules/**)",
+      "Read(./.next/**)",
+      "Read(./dist/**)",
+      "Read(./build/**)",
+      "Edit(./.env)",
+      "Edit(./.env.*)",
+      "Edit(./secrets/**)",
+      "Edit(./node_modules/**)",
+      "Edit(./.next/**)",
+      "Edit(./dist/**)",
+      "Edit(./build/**)",
+      "Write(./.env)",
+      "Write(./.env.*)",
+      "Write(./secrets/**)",
+      "Write(./node_modules/**)",
+      "Write(./.next/**)",
+      "Write(./dist/**)",
+      "Write(./build/**)",
+      "Bash(rm -rf:*)",
+      "Bash(curl:*)",
+      "WebFetch"
+    ]
+  }
+}
